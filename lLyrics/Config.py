@@ -120,7 +120,9 @@ class Config(object):
 
     def get_hide_label(self):
         return self.settings["hide-label"]
-
+    
+    def check_local_lrc(self):
+        return llyrics.LYRICS_SONG_LRC in self.settings["active-sources"]
 
 class ConfigDialog(GObject.Object, PeasGtk.Configurable):
     __gtype_name__ = 'lLyricsConfigDialog'
@@ -234,18 +236,19 @@ class ConfigDialog(GObject.Object, PeasGtk.Configurable):
             check.set_active(source in self.settings["active-sources"])
             check.connect("toggled", self.source_toggled, source)
             hbox.pack_start(check, True, True, 3)
-
-            button_up = Gtk.Button('\u2191')
-            button_up.connect("clicked", self.reorder_sources, source, hbox, vbox, "up")
-            hbox.pack_start(button_up, False, False, 3)
-            if self.settings["scanning-order"].index(source) == 0:
-                button_up.set_sensitive(False)
-
-            button_down = Gtk.Button('\u2193')
-            button_down.connect("clicked", self.reorder_sources, source, hbox, vbox, "down")
-            hbox.pack_start(button_down, False, False, 3)
-            if self.settings["scanning-order"].index(source) == len(self.settings["scanning-order"]) - 1:
-                button_down.set_sensitive(False)
+            
+            if source != lLyrics.LYRICS_SONG_LRC:
+                button_up = Gtk.Button('\u2191')
+                button_up.connect("clicked", self.reorder_sources, source, hbox, vbox, "up")
+                hbox.pack_start(button_up, False, False, 3)
+                if self.settings["scanning-order"].index(source) == 0:
+                    button_up.set_sensitive(False)
+    
+                button_down = Gtk.Button('\u2193')
+                button_down.connect("clicked", self.reorder_sources, source, hbox, vbox, "down")
+                hbox.pack_start(button_down, False, False, 3)
+                if self.settings["scanning-order"].index(source) == len(self.settings["scanning-order"]) - 1:
+                    button_down.set_sensitive(False)
 
             vbox.pack_start(hbox, False, False, 0)
 

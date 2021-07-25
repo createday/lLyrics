@@ -93,8 +93,9 @@ LYRICS_TITLE_STRIP = ["\(live[^\)]*\)", "\(acoustic[^\)]*\)", "\([^\)]*mix\)", "
 LYRICS_TITLE_REPLACE = [("/", "-"), (" & ", " and ")]
 LYRICS_ARTIST_REPLACE = [("/", "-"), (" & ", " and ")]
 
+LYRICS_SONG_LRC = "Local lyrics(*.lrc)"
 LYRICS_SOURCES = ["Lyricwiki.org", "Letras.terra.com.br", "Metrolyrics.com", "AZLyrics.com", "Lyricsmania.com",
-                  "Vagalume.com.br", "Genius.com", "Darklyrics.com", "Chartlyrics.com"]
+                  "Vagalume.com.br", "Genius.com", "Darklyrics.com", "Chartlyrics.com", LYRICS_SONG_LRC]
 
 
 class lLyrics(GObject.Object, Peas.Activatable):
@@ -123,6 +124,7 @@ class lLyrics(GObject.Object, Peas.Activatable):
         # Get the user preferences
         config = Config()
         self.settings = config.get_settings()
+        print(self.settings)
         self.get_user_preferences(self.settings, None, config)
         # Watch for setting changes
         self.skc_id = self.settings.connect('changed', self.get_user_preferences, config)
@@ -474,11 +476,17 @@ class lLyrics(GObject.Object, Peas.Activatable):
         self.title = entry.get_string(RB.RhythmDBPropType.TITLE)
 
         print("search lyrics for " + self.artist + " - " + self.title)
-
+        print("location: " + entry.get_string(RB.RhythmDBPropType.LOCATION))
         self.was_corrected = False
 
         (self.clean_artist, self.clean_title) = self.clean_song_data(self.artist, self.title)
-        self.path = self.build_cache_path(self.clean_artist, self.clean_title)
+        
+        if LYRICS_SONG_LRC in self.settings["active-sources"]:
+            self.path = self.build_my_cache_path(self.clean_artist, entry.get_string(RB.RhythmDBPropType.LOCATION))
+        else:
+            self.path = self.build_cache_path(self.clean_artist, self.clean_title)
+  
+        print("lyrics file: " + self.path)
 
         self.scan_all_sources(self.clean_artist, self.clean_title, True)
 
@@ -518,6 +526,14 @@ class lLyrics(GObject.Object, Peas.Activatable):
             os.mkdir(artist_folder)
 
         return os.path.join(artist_folder, title[:128] + '.lyric')
+
+    def build_my_cache_path(self, artist, location):
+        #if not os.path.exists(self.lyrics_folder):
+        #    print("lyrics folder does not exist: ", self.lyrics_folder)
+        #    return
+        file_path = location.split('///')[1]
+        #return os.path.join(self.lyrics_folder, title.split('.')[0] + '.lrc')
+        return '/' + file_path.split('.')[0] + '.lrc'
 
     def scan_selected_source_callback(self, action, activated_action):
         if not action.get_active():
